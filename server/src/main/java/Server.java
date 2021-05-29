@@ -11,7 +11,7 @@ import io.netty.handler.codec.string.StringEncoder;
 
 public class Server {
 
-    private static final int PORT = 5678;
+    private static final int PORT = 8765;
     public static final String ROOT_PATH = "server_dir";
 
     public Server() {
@@ -26,10 +26,9 @@ public class Server {
                         @Override
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
-                                    new StringEncoder(),
-                                    new StringDecoder(),
-                                    new InputHandler(),
-                                    new OutputHandler()
+                                    new RequestDecoder(),
+                                    new ResponseDataEncoder(),
+                                    new ProcessingHandler()
                             );
                         }
                     });
