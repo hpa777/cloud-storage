@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class InputHandler extends SimpleChannelInboundHandler<String> {
 
-    private final ConcurrentHashMap<String, Client> clients = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CommandHandler> clients = new ConcurrentHashMap<>();
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, String s) throws Exception {
@@ -14,7 +14,7 @@ public class InputHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        clients.put(ctx.channel().id().asShortText(), new Client(ctx.channel().remoteAddress().toString()));
+        clients.put(ctx.channel().id().asShortText(), new CommandHandler(ctx.channel().remoteAddress().toString()));
         System.out.println("Client connected: " + ctx.channel());
     }
 

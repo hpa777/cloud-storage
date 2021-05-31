@@ -2,8 +2,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.text.SimpleDateFormat;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class Client {
+public class CommandHandler {
 
     private static final String ROOT_NOTIFY = "You are already in the root directory\n\r";
     private static final String DIRECTORY_DOESNT_EXIST = "Directory or file %s doesn't exist\n\r";
@@ -15,16 +20,17 @@ public class Client {
 
     private String nickName;
 
-    public Client(String nickName) {
+    public CommandHandler(String nickName) {
         this.currentPath = Path.of(Server.ROOT_PATH);
         this.nickName = nickName;
     }
 
-    public String doCommand(String command) throws IOException {
+    public Object doCommand(String command) throws IOException {
         command = command.replace("\n", "").replace("\r", "");
         StringBuilder response = new StringBuilder();
         if ("ls".equals(command)) {
-            response.append(getFileList().concat("\n\r"));
+            //response.append(getFileList().concat("\n\r"));
+            return listFilesUsingFileWalkAndVisitor(currentPath.toString());
         } else if (command.startsWith("nick ")) {
             changeNickname(command);
         } else if (command.startsWith("cd ")) {
@@ -44,8 +50,29 @@ public class Client {
         return response.toString();
     }
 
+    private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+
+    public Set<String> listFilesUsingFileWalkAndVisitor(String dir) throws IOException {
+        Set<String> fileList = new HashSet<>();
+        Files.walkFileTree(Paths.get(dir), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                fileList.add(String.join(";"
+                        , file.getFileName().toString()
+                        , attrs.isDirectory() ? "dir" : ""
+                        , Long.toString(attrs.size())
+                        , simpleDateFormat.format(attrs.creationTime().toMillis())
+                        , simpleDateFormat.format(attrs.lastModifiedTime().toMillis())
+                ));
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return fileList;
+    }
+
     private String createFile(String command) throws IOException {
-        String ret ="";
+        String ret = "";
         String dir = command.split(" ")[1];
         Path neededPath = Path.of(currentPath.toString(), dir);
         if (Files.exists(neededPath) && !Files.isDirectory(neededPath)) {
@@ -108,6 +135,9 @@ public class Client {
         String dir = command.split(" ")[1];
         Path neededPath = Path.of(currentPath.toString(), dir);
         try {
+            //BasicFileAttributes attr = Files.readAttributes(neededPath, BasicFileAttributes.class);
+            //FileTime t = attr.creationTime();
+
             Files.delete(neededPath);
         } catch (NoSuchFileException e) {
             ret = String.format(NO_SUCH_FILE, dir);
@@ -118,7 +148,7 @@ public class Client {
     }
 
     private String createDirectory(String command) throws IOException {
-        String ret ="";
+        String ret = "";
         String dir = command.split(" ")[1];
         Path neededPath = Path.of(currentPath.toString(), dir);
         if (Files.exists(neededPath)) {
@@ -134,16 +164,16 @@ public class Client {
         return String.format("%s>:%s$", this.nickName, currentPathString);
     }
 
-    private void changeNickname(String command)  {
+    private void changeNickname(String command) {
         nickName = command.split(" ")[1];
     }
 
-    private String getFileList()  {
+    private String getFileList() {
         return String.join(" ", new File(currentPath.toString()).list());
     }
 
     private String replacePosition(String command) {
-        String ret ="";
+        String ret = "";
         String neededPath = command.split(" ")[1];
         Path tempPath = Path.of(currentPath.toString(), neededPath);
         if ("..".equals(neededPath)) {

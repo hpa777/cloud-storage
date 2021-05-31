@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+
+<?import java.net.URL?>
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0"
+         prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns:fx="http://javafx.com/fxml/1"
+         xmlns="http://javafx.com/javafx/11.0.1">
+    <stylesheets>
+        <URL value="@/css/style.css"/>
+    </stylesheets>
+    <tabs>
+        <Tab text="Sign in">
+            <fx:include source="auth.fxml"/>
+        </Tab>
+        <Tab text="Create an account">
+            <fx:include source="reg.fxml"/>
+        </Tab>
+    </tabs>
+</TabPane>
