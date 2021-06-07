@@ -4,7 +4,7 @@
 <?import javafx.scene.control.cell.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.MainController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.MainController">
    <top>
       <VBox prefHeight="42.0" prefWidth="600.0" BorderPane.alignment="CENTER">
          <children>
@@ -29,7 +29,16 @@
             </MenuBar>
             <ToolBar prefHeight="40.0" prefWidth="200.0">
               <items>
-                <Button mnemonicParsing="false" onAction="#btnClick" text="Button" />
+                  <Button mnemonicParsing="false" onAction="#goToUpDirButtonClick" text=".." />
+                  <Button mnemonicParsing="false" onAction="#goToRootDirButtonClick" text="~" />
+                  <Button mnemonicParsing="false" onAction="#makeDirButtonClick" text="mkdir" />
+                  <Button mnemonicParsing="false" onAction="#removeButtonClick" text="rm" fx:id="removeButton" />
+                  <Button mnemonicParsing="false" onAction="#renameButtonClick" text="ren" fx:id="renameButton" />
+                  <Button mnemonicParsing="false" onAction="#copyButtonClick" text="copy" fx:id="copyButton" />
+                  <Button mnemonicParsing="false" onAction="#pasteButtonClick" text="paste" fx:id="pasteButton" />
+                  <Button mnemonicParsing="false" onAction="#downloadButtonClick" text="download" fx:id="downloadButton" />
+                  <Button mnemonicParsing="false" onAction="#uploadButtonClick" text="upload" fx:id="uploadButton" />
+
               </items>
             </ToolBar>
          </children>
@@ -69,7 +78,7 @@
                           <PropertyValueFactory property="dateCreate" />
                       </cellValueFactory>
                   </TableColumn>
-                  <TableColumn prefWidth="50.0" text="Date Modify">
+                  <TableColumn prefWidth="50.0" text="Date modify">
                       <cellValueFactory>
                           <PropertyValueFactory property="dateModify" />
                       </cellValueFactory>

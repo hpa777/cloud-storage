@@ -1,31 +1,28 @@
-package controllers;
 
-public class TableRow {
+package client;
 
+public class TableRow
+{
     private String fileName;
-
     private String isDir;
-
     private String size;
-
     private String dateCreate;
-
     private String dateModify;
-
-    public TableRow(String fileName, String isDir, String size, String dateCreate, String dateModify) {
+    
+    public TableRow(final String fileName, final String isDir, final String size, final String dateCreate, final String dateModify) {
         this.fileName = fileName;
         this.isDir = isDir;
         this.size = size;
         this.dateCreate = dateCreate;
         this.dateModify = dateModify;
     }
-
+    
     public String getFileName() {
-        return fileName;
+        return this.fileName;
     }
-
+    
     public String getIsDir() {
-        return isDir;
+        return this.isDir;
     }
 
     public String getSize() {
