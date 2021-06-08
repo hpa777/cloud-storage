@@ -1,12 +1,16 @@
 package client;
 
 import commands.Command;
-import javafx.scene.control.ButtonType;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+
+import java.util.Locale;
 import java.util.Optional;
 import javafx.stage.Modality;
 import javafx.stage.StageStyle;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.Alert;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
@@ -20,9 +24,7 @@ import javafx.application.Platform;
 import java.util.ResourceBundle;
 import java.net.URL;
 import javafx.stage.Stage;
-import javafx.scene.control.Button;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableView;
 import javafx.fxml.Initializable;
 
 public class MainController implements Initializable
@@ -41,6 +43,12 @@ public class MainController implements Initializable
     public Button uploadButton;
     @FXML
     public Button renameButton;
+    @FXML
+    public TextField searchField;
+    @FXML
+    public Button searchButton;
+    @FXML
+    public Label breadCrumbs;
 
     private Stage stage;
     
@@ -50,7 +58,7 @@ public class MainController implements Initializable
             stage = (Stage) tableView.getScene().getWindow();
             stage.setOnCloseRequest(event -> Client.getInstance().stopClient());
         });
-        refreshTableView();
+        refreshTableView("");
     }
     
     @FXML
@@ -84,16 +92,20 @@ public class MainController implements Initializable
         return result;
     }
     
-    private void refreshTableView() {
+    private void refreshTableView(String selectName) {
         Platform.runLater(() -> {
             setButtonsDisable(true);
             downloadButton.setDisable(true);
+            breadCrumbs.setText(sendCommand(Command.GET_CURRENT_PATH).toString());
             tableView.getItems().clear();
             Set<String> s = (Set<String>)sendCommand(Command.LIST_FILES);
             s.forEach(f -> {
                 String[] info = f.split(Command.DELIMITER);
                 TableRow t = new TableRow(info[0], info[1], info[2], info[3], info[4]);
-                this.tableView.getItems().add(t);
+                tableView.getItems().add(t);
+                if (!selectName.isEmpty() && info[0].toLowerCase(Locale.ROOT).contains(selectName.toLowerCase(Locale.ROOT))) {
+                    tableView.getSelectionModel().select(t);
+                }
             });
         });
     }
@@ -111,7 +123,6 @@ public class MainController implements Initializable
     
     @FXML
     public void goToRootDirButtonClick(ActionEvent actionEvent)  {
-
         this.changeDir(Command.GO_ROOT_DIR);
     }
     
@@ -144,7 +155,7 @@ public class MainController implements Initializable
     public void pasteButtonClick(ActionEvent actionEvent) {
         sendCommand(Command.PASTE);
         pasteButton.setDisable(true);
-        refreshTableView();
+        refreshTableView("");
     }
     
     @FXML
@@ -157,12 +168,35 @@ public class MainController implements Initializable
         upload();
     }
 
+    @FXML
+    public void searchButtonClick(ActionEvent actionEvent) {
+        search();
+    }
+
+    @FXML
+    public void disconnectButtonClick(ActionEvent actionEvent) throws IOException {
+        Client.getInstance().stopClient();
+        Parent root = FXMLLoader.load(this.getClass().getResource("/connectpage.fxml"));
+        stage.getScene().setRoot(root);
+    }
+
+    private void search() {
+        String search = searchField.getText();
+        if (search.isEmpty()) {
+            return;
+        }
+        String response = (String) sendCommand(Command.FIND + search);
+        if (response.equals(Command.OK)) {
+            refreshTableView(search);
+        }
+    }
+
     public static final String FILE_ALREADY_EXISTS = "File already exists";
     
     private void upload() {
-        File file = this.showFileChooser("Upload", "");
+        File file = showFileChooser("Upload", "");
         if (file != null) {
-            String response = this.sendCommand(Command.UPLOAD + file.getName()).toString();
+            String response = sendCommand(Command.UPLOAD + file.getName()).toString();
             if (response.equals(Command.WAIT)) {
                 try {
                     sendCommand(Files.readAllBytes(file.toPath()));
@@ -170,7 +204,7 @@ public class MainController implements Initializable
                 catch (IOException e) {
                     e.printStackTrace();
                 }
-                refreshTableView();
+                refreshTableView("");
             }
             else if (response.equals(Command.ALREADY_EXISTS)) {
                 this.showAlert(FILE_ALREADY_EXISTS);
@@ -212,7 +246,7 @@ public class MainController implements Initializable
     
     private void changeDir(String command) {
         sendCommand(Command.CHANGE_DIR + command);
-        refreshTableView();
+        refreshTableView("");
     }
     
     private void showMkdirDialog() {
@@ -226,7 +260,7 @@ public class MainController implements Initializable
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(dir -> {
             sendCommand(Command.MAKE_DIR + dir);
-            refreshTableView();
+            refreshTableView("");
         });
     }
     
@@ -245,7 +279,7 @@ public class MainController implements Initializable
         Optional<ButtonType> result = alert.showAndWait();
         if (result.get() == ButtonType.OK) {
             sendCommand(Command.REMOVE + tableRow.getFileName());
-            refreshTableView();
+            refreshTableView("");
         }
     }
     
@@ -267,8 +301,10 @@ public class MainController implements Initializable
                 showAlert(FILE_ALREADY_EXISTS);
             }
             else if (response.equals(Command.OK)) {
-                refreshTableView();
+                refreshTableView("");
             }
         });
     }
+
+
 }

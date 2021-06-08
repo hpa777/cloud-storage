@@ -13,10 +13,13 @@ public class Command {
     public static final String PASTE = "paste";
     public static final String GO_UP_DIR = "..";
     public static final String GO_ROOT_DIR = "~";
+    public static final String FIND = "find ";
+    public static final String GET_CURRENT_PATH = "breadcrumbs";
 
     public static final String ALREADY_EXISTS = "already_exists";
     public static final String OK = "ok";
     public static final String WAIT = "wait";
+    public static final String FAIL = "fail";
 
     public static final String DELIMITER = ";";
 }

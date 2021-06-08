@@ -9,6 +9,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -55,8 +56,50 @@ public class CommandHandler {
             result = copy(command);
         } else if (command.equals(Command.PASTE)) {
             result = paste();
+        } else if (command.startsWith(Command.FIND)) {
+            result = find(command);
+        } else if (command.equals(Command.GET_CURRENT_PATH)) {
+            result = getCurrentPath();
         }
         return result;
+    }
+
+    private Object getCurrentPath() {
+        return currentPath.toString().replace(Server.ROOT_PATH, "~");
+    }
+
+    private boolean found;
+
+    private Object find(String command) {
+        String file = command.split(" ")[1].toLowerCase(Locale.ROOT);
+        found = false;
+        try {
+            Files.walkFileTree(Path.of(Server.ROOT_PATH), new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    if (dir.getFileName().toString().toLowerCase(Locale.ROOT).contains(file)) {
+                        currentPath = dir.getParent();
+                        found = true;
+                        return FileVisitResult.TERMINATE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path f, BasicFileAttributes attrs) throws IOException {
+                    if (f.getFileName().toString().toLowerCase(Locale.ROOT).contains(file)) {
+                        currentPath = f.getParent();
+                        found = true;
+                        return FileVisitResult.TERMINATE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return found ? Command.OK : Command.FAIL;
     }
 
     private Object rename(String command) {

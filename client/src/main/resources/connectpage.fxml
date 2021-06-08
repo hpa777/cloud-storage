@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import java.net.URL?>
+<BorderPane prefHeight="200.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.ConnectController">
+    <stylesheets>
+        <URL value="@/css/style.css"/>
+    </stylesheets>
+    <center>
+        <VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+            <children>
+                <HBox alignment="CENTER_LEFT">
+                    <children>
+                        <Label alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="80.0" text="IP">
+                            <HBox.margin>
+                                <Insets right="10.0" />
+                            </HBox.margin>
+                        </Label>
+                        <TextField fx:id="ipField" text="localhost" />
+                    </children>
+                    <padding>
+                        <Insets bottom="5.0" left="100.0" top="5.0" />
+                    </padding>
+                    <VBox.margin>
+                        <Insets top="20.0" />
+                    </VBox.margin>
+                </HBox>
+                <HBox alignment="CENTER_LEFT">
+                    <children>
+                        <Label alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="80.0" text="PORT">
+                            <HBox.margin>
+                                <Insets right="10.0" />
+                            </HBox.margin>
+                        </Label>
+                        <TextField fx:id="portField" text="8765" />
+                    </children>
+                    <padding>
+                        <Insets bottom="5.0" left="100.0" top="5.0" />
+                    </padding>
+                </HBox>
+                <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="280.0" text="Connect" onAction="#connectClick">
+                    <VBox.margin>
+                        <Insets left="110.0" top="10.0" />
+                    </VBox.margin></Button>
+            </children>
+        </VBox>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_LEFT" prefHeight="24.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+            <children>
+                <Label fx:id="statusLabel" />
+            </children>
+            <padding>
+                <Insets left="10.0" />
+            </padding>
+        </HBox>
+    </bottom>
+
+</BorderPane>

@@ -12,40 +12,34 @@
               <menus>
                 <Menu mnemonicParsing="false" text="File">
                   <items>
-                    <MenuItem mnemonicParsing="false" text="Close" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="Delete" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Help">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="About" />
+                    <MenuItem mnemonicParsing="false" text="Disconnect" onAction="#disconnectButtonClick" />
                   </items>
                 </Menu>
               </menus>
             </MenuBar>
-            <ToolBar prefHeight="40.0" prefWidth="200.0">
+            <ToolBar prefHeight="42.0" prefWidth="600.0">
               <items>
                   <Button mnemonicParsing="false" onAction="#goToUpDirButtonClick" text=".." />
                   <Button mnemonicParsing="false" onAction="#goToRootDirButtonClick" text="~" />
                   <Button mnemonicParsing="false" onAction="#makeDirButtonClick" text="mkdir" />
-                  <Button mnemonicParsing="false" onAction="#removeButtonClick" text="rm" fx:id="removeButton" />
-                  <Button mnemonicParsing="false" onAction="#renameButtonClick" text="ren" fx:id="renameButton" />
-                  <Button mnemonicParsing="false" onAction="#copyButtonClick" text="copy" fx:id="copyButton" />
-                  <Button mnemonicParsing="false" onAction="#pasteButtonClick" text="paste" fx:id="pasteButton" />
-                  <Button mnemonicParsing="false" onAction="#downloadButtonClick" text="download" fx:id="downloadButton" />
-                  <Button mnemonicParsing="false" onAction="#uploadButtonClick" text="upload" fx:id="uploadButton" />
-
+                  <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeButtonClick" text="rm" />
+                  <Button fx:id="renameButton" mnemonicParsing="false" onAction="#renameButtonClick" text="ren" />
+                  <Button fx:id="copyButton" mnemonicParsing="false" onAction="#copyButtonClick" text="copy" />
+                  <Button fx:id="pasteButton" mnemonicParsing="false" onAction="#pasteButtonClick" text="paste" />
+                  <Button fx:id="downloadButton" mnemonicParsing="false" onAction="#downloadButtonClick" text="download" />
+                  <Button fx:id="uploadButton" mnemonicParsing="false" onAction="#uploadButtonClick" text="upload" />
+                  <TextField fx:id="searchField" />
+                  <Button fx:id="searchButton" mnemonicParsing="false" onAction="#searchButtonClick" text="search" />
               </items>
             </ToolBar>
          </children>
       </VBox>
    </top>
    <bottom>
-      <Pane prefHeight="28.0" prefWidth="600.0" BorderPane.alignment="CENTER" />
+      <Pane prefHeight="28.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label layoutX="10.0"  fx:id="breadCrumbs" />
+         </children></Pane>
    </bottom>
    <center>
       <GridPane BorderPane.alignment="CENTER">
