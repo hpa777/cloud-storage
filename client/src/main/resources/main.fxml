@@ -52,7 +52,7 @@
          <children>
             <TableView fx:id="tableView" onMouseClicked="#clickItem" prefHeight="200.0" prefWidth="200.0">
               <columns>
-                  <TableColumn prefWidth="20.0" text="isDir">
+                  <TableColumn prefWidth="50.0" text="Is dir">
                       <cellValueFactory>
                           <PropertyValueFactory property="isDir" />
                       </cellValueFactory>
@@ -67,12 +67,12 @@
                           <PropertyValueFactory property="size" />
                       </cellValueFactory>
                   </TableColumn>
-                  <TableColumn prefWidth="50.0" text="Date create">
+                  <TableColumn prefWidth="150.0" text="Date create">
                       <cellValueFactory>
                           <PropertyValueFactory property="dateCreate" />
                       </cellValueFactory>
                   </TableColumn>
-                  <TableColumn prefWidth="50.0" text="Date modify">
+                  <TableColumn prefWidth="150.0" text="Date modify">
                       <cellValueFactory>
                           <PropertyValueFactory property="dateModify" />
                       </cellValueFactory>

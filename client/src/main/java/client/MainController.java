@@ -1,31 +1,29 @@
 package client;
 
 import commands.Command;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-
-import java.util.Locale;
-import java.util.Optional;
-import javafx.stage.Modality;
-import javafx.stage.StageStyle;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import javafx.event.ActionEvent;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.ExecutionException;
-import javafx.scene.input.MouseEvent;
-import javafx.application.Platform;
-import java.util.ResourceBundle;
 import java.net.URL;
-import javafx.stage.Stage;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
+import java.nio.file.Files;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public class MainController implements Initializable
 {
@@ -60,7 +58,8 @@ public class MainController implements Initializable
         });
         refreshTableView("");
     }
-    
+
+
     @FXML
     public void clickItem(MouseEvent mouseEvent) {
         TableRow tableRow = tableView.getSelectionModel().getSelectedItem();
@@ -74,24 +73,28 @@ public class MainController implements Initializable
             changeDir(tableRow.getFileName());
         }
     }
-    
+
+    /**
+     * Отправка объекта на сервер и получение ответа
+     * @param command
+     * @return
+     */
     private Object sendCommand(Object command) {
         Object result = null;
         try {
             result = Client.getInstance().sendMsg(command);
         }
-        catch (InterruptedException e) {
+        catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
-        }
-        catch (ExecutionException e2) {
-            e2.printStackTrace();
-        }
-        catch (TimeoutException e3) {
-            e3.printStackTrace();
         }
         return result;
     }
-    
+
+    /**
+     * Обновление содержимого TableView и состояния кнопок.
+     * Если задан параметр selectName, выделяется строка содержащая этот параметр в столбце fileName.
+     * @param selectName
+     */
     private void refreshTableView(String selectName) {
         Platform.runLater(() -> {
             setButtonsDisable(true);
@@ -109,7 +112,11 @@ public class MainController implements Initializable
             });
         });
     }
-    
+
+    /**
+     * Обновление состояния кнопок
+     * @param disable
+     */
     private void setButtonsDisable(boolean disable) {
         removeButton.setDisable(disable);
         renameButton.setDisable(disable);

@@ -6,11 +6,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class CommandHandler {
@@ -20,29 +22,50 @@ public class CommandHandler {
     private static final String ROOT_NOTIFY = "You are already in the root directory\n\r";
     private static final String DIRECTORY_DOESNT_EXIST = "Directory or file %s doesn't exist\n\r";
 
+    /**
+     * Корневая директория
+     */
+    private Path rootPath;
+
+    /**
+     * Текущая директория
+     */
     private Path currentPath;
 
-    private Path sourcePath;
+    private DbHelper dbHelper;
 
-    private final int rootPathLength;
-
-    public CommandHandler(String nickName) {
-        this.currentPath = Path.of(Server.ROOT_PATH);
-        this.rootPathLength = currentPath.toString().length();
+    public CommandHandler(Connection connection) {
+        this.dbHelper = new DbHelper(connection);
     }
 
+    /**
+     * Обработчик полученных команд
+     *
+     * @param msg
+     * @return
+     * @throws IOException
+     */
     public Object doCommand(Object msg) throws IOException {
+        // Если ожидалась загрузка файла, получаем файл и сохраняем его.
         if (uploadFile != null) {
             return saveFile(msg);
         }
         String command = msg.toString().replace("\n", "").replace("\r", "");
         logger.info("Receive command: " + command);
+        // Если пользователь не аутенифицирован, переходим к атентификации или регистрации.
+        if (rootPath == null) {
+            return authenticate(command);
+        }
         Object result = null;
         if (Command.LIST_FILES.equals(command)) {
             result = listFiles();
-        } if (command.startsWith(Command.DOWNLOAD)) {
+        } else if (Command.GET_CURRENT_PATH.equals(command)) {
+            result = getCurrentPath();
+        } else if (Command.PASTE.equals(command)) {
+            result = paste();
+        } else if (command.startsWith(Command.DOWNLOAD)) {
             result = download(command);
-        } if (command.startsWith(Command.UPLOAD)) {
+        } else if (command.startsWith(Command.UPLOAD)) {
             result = upload(command);
         } else if (command.startsWith(Command.CHANGE_DIR)) {
             result = replacePosition(command);
@@ -54,27 +77,76 @@ public class CommandHandler {
             result = remove(command);
         } else if (command.startsWith(Command.COPY)) {
             result = copy(command);
-        } else if (command.equals(Command.PASTE)) {
-            result = paste();
         } else if (command.startsWith(Command.FIND)) {
             result = find(command);
-        } else if (command.equals(Command.GET_CURRENT_PATH)) {
-            result = getCurrentPath();
         }
         return result;
     }
 
+    /**
+     * Аутентификаци/Регистрация
+     * В случае успеха устанавливается корневая директория пользователя.
+     *
+     * @param command
+     * @return
+     */
+    private Object authenticate(String command) {
+        String[] d = command.split(Command.DELIMITER);
+        Long uid = null;
+        if (command.startsWith(Command.LOGIN)) {
+            uid = dbHelper.getUserId(d[1], d[2]);
+        } else if (command.startsWith(Command.REGISTRATION)) {
+            uid = dbHelper.registration(d[1], d[2], d[3]);
+        }
+        if (uid != null) {
+            rootPath = getRootPath(uid);
+            currentPath = rootPath;
+            if (rootPath != null) return Command.OK;
+        }
+        return Command.FAIL;
+    }
+
+    /**
+     * Возвращает корневую директорию пользователя (root_server_dir/user_id). Если не существует - создаем
+     *
+     * @param uid Long
+     * @return Path
+     */
+    private Path getRootPath(Long uid) {
+        Path path = Path.of(Settings.getInstance().getRootPath(), Long.toString(uid));
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectory(path);
+            } catch (IOException e) {
+                path = null;
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
+        }
+        return path;
+    }
+
+    /**
+     * Возвращает "Breadcrumbs"
+     * @return
+     */
     private Object getCurrentPath() {
-        return currentPath.toString().replace(Server.ROOT_PATH, "~");
+        return String.format("%s %s"
+                , dbHelper.getUserName()
+                , currentPath.toString().replace(rootPath.toString(), "~"));
     }
 
     private boolean found;
 
+    /**
+     * Поиск файла/директории
+     * @param command
+     * @return
+     */
     private Object find(String command) {
         String file = command.split(" ")[1].toLowerCase(Locale.ROOT);
         found = false;
         try {
-            Files.walkFileTree(Path.of(Server.ROOT_PATH), new SimpleFileVisitor<>() {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     if (dir.getFileName().toString().toLowerCase(Locale.ROOT).contains(file)) {
@@ -97,11 +169,16 @@ public class CommandHandler {
 
             });
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return found ? Command.OK : Command.FAIL;
     }
 
+    /**
+     * Переименование файла/директории
+     * @param command
+     * @return
+     */
     private Object rename(String command) {
         String dir = command.split(" ")[1];
         Path fileToMovePath = Path.of(currentPath.toString(), dir);
@@ -113,25 +190,20 @@ public class CommandHandler {
         try {
             Files.move(fileToMovePath, targetPath);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return Command.OK;
     }
 
-    private Object saveFile(Object msg) {
-        try {
-            Files.write(uploadFile, (byte[])msg);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        finally {
-            uploadFile = null;
-        }
-        return Command.OK;
-    }
+
 
     private Path uploadFile;
 
+    /**
+     * Готвимся получить файл.
+     * @param command
+     * @return
+     */
     private Object upload(String command) {
         String dir = command.split(" ")[1];
         uploadFile = Path.of(currentPath.toString(), dir);
@@ -142,6 +214,28 @@ public class CommandHandler {
         return Command.WAIT;
     }
 
+    /**
+     * Сохраняем полученный файл
+     * @param msg
+     * @return
+     */
+    private Object saveFile(Object msg) {
+        try {
+            Files.write(uploadFile, (byte[]) msg);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        } finally {
+            uploadFile = null;
+        }
+        return Command.OK;
+    }
+
+    /**
+     * Отправляем файл
+     * @param command
+     * @return
+     * @throws IOException
+     */
     private Object download(String command) throws IOException {
         String dir = command.split(" ")[1];
         Path neededPath = Path.of(currentPath.toString(), dir);
@@ -150,24 +244,35 @@ public class CommandHandler {
 
     private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
+    /**
+     * Отправляем список файлов
+     * @return
+     * @throws IOException
+     */
     public Set<String> listFiles() throws IOException {
         Set<String> fileList = new HashSet<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(currentPath)) {
             for (Path path : stream) {
-                    BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-                    fileList.add(String.join(Command.DELIMITER
-                            , path.getFileName().toString()
-                            , attrs.isDirectory() ? "dir" : ""
-                            , Long.toString(!attrs.isDirectory() ? attrs.size() : getFolderSize(path))
-                            , simpleDateFormat.format(attrs.creationTime().toMillis())
-                            , simpleDateFormat.format(attrs.lastModifiedTime().toMillis())
-                    ));
+                BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
+                fileList.add(String.join(Command.DELIMITER
+                        , path.getFileName().toString()
+                        , attrs.isDirectory() ? "dir" : ""
+                        , Long.toString(!attrs.isDirectory() ? attrs.size() : getFolderSize(path))
+                        , simpleDateFormat.format(attrs.creationTime().toMillis())
+                        , simpleDateFormat.format(attrs.lastModifiedTime().toMillis())
+                ));
 
             }
         }
         return fileList;
     }
 
+    /**
+     * Возвращает размер директории
+     * @param folder
+     * @return
+     * @throws IOException
+     */
     public long getFolderSize(Path folder) throws IOException {
         return Files.walk(folder)
                 .filter(p -> p.toFile().isFile())
@@ -175,40 +280,61 @@ public class CommandHandler {
                 .sum();
     }
 
+    /**
+     * Подготовка к копированию. Запоминаем источник
+     * @param command
+     * @return
+     */
     private Object copy(String command) {
         String[] arg = command.split(" ");
-        sourcePath = Path.of(currentPath.toString(), arg[1]);
+        sourcePathForCopy = Path.of(currentPath.toString(), arg[1]);
         return Command.OK;
     }
 
+    /**
+     * Путь источника копирования
+     */
+    private Path sourcePathForCopy;
+
+    /**
+     * Копирование. Если копируется директория - рекурсивно копируем содержимое.
+     * @return
+     * @throws IOException
+     */
     private Object paste() throws IOException {
-        if (!Files.exists(sourcePath)) {
+        if (!Files.exists(sourcePathForCopy)) {
             return null;
         }
-        if (Files.isDirectory(sourcePath)) {
-            Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
+        if (Files.isDirectory(sourcePathForCopy)) {
+            Files.walkFileTree(sourcePathForCopy, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    Path path = currentPath.resolve(sourcePath.relativize(dir));
+                    Path path = currentPath.resolve(sourcePathForCopy.relativize(dir));
                     Files.createDirectories(path);
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Path target = currentPath.resolve(sourcePath.relativize(file));
+                    Path target = currentPath.resolve(sourcePathForCopy.relativize(file));
                     Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING);
                     return FileVisitResult.CONTINUE;
                 }
 
             });
         } else {
-            Path target = currentPath.resolve(sourcePath.getFileName());
-            Files.copy(sourcePath, target, StandardCopyOption.REPLACE_EXISTING);
+            Path target = currentPath.resolve(sourcePathForCopy.getFileName());
+            Files.copy(sourcePathForCopy, target, StandardCopyOption.REPLACE_EXISTING);
         }
         return Command.OK;
     }
 
+    /**
+     * Удаление файла и директории (рекурсивно)
+     * @param command
+     * @return
+     * @throws IOException
+     */
     private Object remove(String command) throws IOException {
         String dir = command.split(" ")[1];
         Path neededPath = Path.of(currentPath.toString(), dir);
@@ -219,6 +345,12 @@ public class CommandHandler {
         return Command.OK;
     }
 
+    /**
+     * Создание директории
+     * @param command
+     * @return
+     * @throws IOException
+     */
     private Object createDirectory(String command) throws IOException {
         String ret = Command.OK;
         String dir = command.split(" ")[1];
@@ -231,19 +363,24 @@ public class CommandHandler {
         return ret;
     }
 
+    /**
+     * Смена текущей директории
+      * @param command
+     * @return
+     */
     private String replacePosition(String command) {
         String ret = "";
         String neededPath = command.split(" ")[1];
         Path tempPath = Path.of(currentPath.toString(), neededPath);
         if (Command.GO_UP_DIR.equals(neededPath)) {
             tempPath = currentPath.getParent();
-            if (tempPath == null || !tempPath.toString().startsWith(Server.ROOT_PATH)) {
+            if (tempPath == null || !tempPath.toString().startsWith(rootPath.toString())) {
                 ret = ROOT_NOTIFY;
             } else {
                 currentPath = tempPath;
             }
         } else if (Command.GO_ROOT_DIR.equals(neededPath)) {
-            currentPath = Path.of(Server.ROOT_PATH);
+            currentPath = rootPath;
         } else {
             if (tempPath.toFile().exists()) {
                 currentPath = tempPath;

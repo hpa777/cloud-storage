@@ -1,35 +1,37 @@
 package client;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
 import commands.Command;
-import javafx.fxml.FXML;
-import javafx.scene.Scene;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Node;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
-public class AuthController
-{
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+public class RegController {
     @FXML
     public TextField loginField;
+    @FXML
+    public TextField nameField;
     @FXML
     public PasswordField passField;
     @FXML
     public Label statusLabel;
 
     @FXML
-    public void continueClick(final ActionEvent actionEvent) throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        String result = Client.getInstance().sendMsg(String.format("%s;%s;%s"
-                , Command.LOGIN
+    public void regButtonClick(ActionEvent actionEvent) throws InterruptedException, ExecutionException, TimeoutException, IOException {
+        String result = Client.getInstance().sendMsg(String.format("%s;%s;%s;%s"
+                , Command.REGISTRATION
                 , loginField.getText()
                 , passField.getText()
+                , nameField.getText()
         )).toString();
         if (result.equals(Command.OK)) {
             Scene scene = ((Node)actionEvent.getSource()).getScene();
@@ -38,6 +40,5 @@ public class AuthController
         } else {
             statusLabel.setText(result);
         }
-
     }
 }

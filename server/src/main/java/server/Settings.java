@@ -78,10 +78,13 @@ public class Settings {
         dbPass = properties.getProperty(DB_PASS_PROP_NAME);
     }
 
+    /**
+     * Установка настроек по умолчанию
+     */
     private void createDefaultProperties() {
         properties.setProperty(PORT_PROP_NAME, "8765");
         properties.setProperty(ROOT_PATH_PROP_NAME, "server_dir");
-        properties.setProperty(CONNECTION_STRING_PROP_NAME, "jdbc:mysql://localhost:3306/chat_db?autoReconnect=true");
+        properties.setProperty(CONNECTION_STRING_PROP_NAME, "jdbc:mysql://localhost:3306/cloud_db?autoReconnect=true");
         properties.setProperty(DB_USER_PROP_NAME, "root");
         properties.setProperty(DB_PASS_PROP_NAME, "root");
         try(FileWriter output = new FileWriter(PROP_FILE_NAME)){

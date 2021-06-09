@@ -22,4 +22,7 @@ public class Command {
     public static final String FAIL = "fail";
 
     public static final String DELIMITER = ";";
+
+    public static final String LOGIN = "login";
+    public static final String REGISTRATION = "reg";
 }

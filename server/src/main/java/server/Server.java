@@ -12,6 +12,9 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -20,20 +23,30 @@ public class Server
 {
     private static final Logger logger = Logger.getLogger(Server.class.getName());
 
-    public static final String ROOT_PATH = Settings.getInstance().getRootPath();
+
+    private static Connection connection;
 
     public static void main(final String[] args) {
-        final LogManager logManager = LogManager.getLogManager();
+        LogManager logManager = LogManager.getLogManager();
         try {
             logManager.readConfiguration(new FileInputStream("logging.properties"));
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-        new Server();
+        Settings settings = Settings.getInstance();
+        try {
+            connection = DriverManager.getConnection(settings.getConnectionString()
+                    , settings.getDbUser()
+                    , settings.getDbPass()
+            );
+            new Server();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
     }
 
-    public Server() {
+    public Server() throws SQLException {
         EventLoopGroup auth = new NioEventLoopGroup(1);
         EventLoopGroup worker = new NioEventLoopGroup();
         try {
@@ -46,7 +59,7 @@ public class Server
                     ch.pipeline().addLast(
                             new ObjectEncoder()
                             , new ObjectDecoder(ClassResolvers.cacheDisabled(null))
-                            , new InputHandler());
+                            , new InputHandler(connection));
                 }
             });
             ChannelFuture future = bootstrap.bind(Settings.getInstance().getPort()).sync();
@@ -56,11 +69,11 @@ public class Server
         }
         catch (InterruptedException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            e.printStackTrace();
         }
         finally {
             auth.shutdownGracefully();
             worker.shutdownGracefully();
+            connection.close();
         }
     }
 

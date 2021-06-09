@@ -15,7 +15,7 @@
                         <Insets right="10.0" />
                      </HBox.margin>
                   </Label>
-                  <TextField />
+                  <TextField fx:id="loginField" />
                </children>
                <padding>
                   <Insets bottom="5.0" left="100.0" top="5.0" />
@@ -31,7 +31,7 @@
                         <Insets right="10.0" />
                      </HBox.margin>
                   </Label>
-                  <PasswordField />
+                  <PasswordField fx:id="passField" />
                </children>
                <padding>
                   <Insets bottom="5.0" left="100.0" top="5.0" />
@@ -47,7 +47,7 @@
    <bottom>
       <HBox alignment="CENTER_LEFT" prefHeight="24.0" prefWidth="600.0" BorderPane.alignment="CENTER">
          <children>
-            <Label text="Label" />
+            <Label fx:id="statusLabel" />
          </children>
          <padding>
             <Insets left="10.0" />
